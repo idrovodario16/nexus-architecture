@@ -1,0 +1,62 @@
+name: Contracts and integration
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+  integration:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: nexus-architecture
+      - uses: actions/checkout@v4
+        with:
+          repository: idrovodario16/nexuscore-platform
+          ref: main
+          path: nexuscore-platform
+      - uses: actions/checkout@v4
+        with:
+          repository: idrovodario16/nexusinsight-analytics
+          ref: main
+          path: nexusinsight-analytics
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start independent APIs
+        run: |
+          cp nexuscore-platform/.env.example nexuscore-platform/.env
+          cp nexusinsight-analytics/.env.example nexusinsight-analytics/.env
+          docker compose -f nexuscore-platform/compose.yaml up -d --build db api
+          docker compose -f nexusinsight-analytics/compose.yaml up -d --build db api
+          for n in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/health && curl -fsS http://localhost:8000/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Verify contract copies and end-to-end flow
+        env:
+          CORE_API_KEY: local-fictional-core-key-change-before-use
+          INSIGHT_API_KEY: local-fictional-insight-key-change-before-use
+          ORGANIZATION_ID: 11111111-1111-4111-8111-111111111111
+        run: |
+          cmp nexus-architecture/contracts/operation.upserted.v1.schema.json nexuscore-platform/contracts/operation.upserted.v1.schema.json
+          cmp nexus-architecture/contracts/operation.upserted.v1.schema.json nexusinsight-analytics/contracts/operation.upserted.v1.schema.json
+          node nexus-architecture/scripts/integration.mjs
+      - name: Logs and teardown
+        if: always()
+        run: |
+          docker compose -f nexuscore-platform/compose.yaml logs --no-color api
+          docker compose -f nexusinsight-analytics/compose.yaml logs --no-color api
+          docker compose -f nexuscore-platform/compose.yaml down
+          docker compose -f nexusinsight-analytics/compose.yaml down
