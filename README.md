@@ -1,5 +1,7 @@
 # Nexus Architecture
 
+**Resumen técnico:** documentación de arquitectura, contratos JSON Schema/OpenAPI y relay JavaScript sobre Node.js para integrar NexusCore y NexusInsight por HTTP. Cada producto conserva su API y PostgreSQL independiente; este repositorio no administra una base propia. Incluye diagramas C4, eventos versionados, reintentos, checkpoint y prueba de integración.
+
 Arquitectura y contratos del ecosistema **NexusCore + NexusInsight**, creado por Darío Idrovo como portafolio Full Stack y Datos.
 
 | Proyecto | Responsabilidad | Código | Demo React |
