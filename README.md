@@ -4,13 +4,13 @@ Arquitectura y contratos del ecosistema **NexusCore + NexusInsight**, creado por
 
 | Proyecto | Responsabilidad | Código | Demo React |
 | --- | --- | --- | --- |
-| NexusCore | Registrar y gestionar operaciones | [Repositorio](https://github.com/idrovodario16/nexuscore-platform) | [Abrir](https://idrovodario16.github.io/nexuscore-platform/) |
-| NexusInsight | Ingerir snapshots y calcular indicadores | [Repositorio](https://github.com/idrovodario16/nexusinsight-analytics) | [Abrir](https://idrovodario16.github.io/nexusinsight-analytics/) |
+| NexusCore | Registrar y gestionar operaciones | [Repositorio](https://github.com/idrovodario16/nexuscore-platform) | [Abrir](https://nexuscore-idrovodario16-demo.brownlyric131.chatgpt.site/) |
+| NexusInsight | Ingerir snapshots y calcular indicadores | [Repositorio](https://github.com/idrovodario16/nexusinsight-analytics) | [Abrir](https://nexusinsight-idrovodario16-demo.brownlyric131.chatgpt.site/) |
 
 ## Cómo funcionan juntos
 Core es dueño de las operaciones. Cada alta/cambio escribe una instantánea versionada en outbox, en la misma transacción que la entidad. El relay lee esa outbox por cursor y entrega eventos a Insight. Insight valida el contrato, registra el event_id en inbox y actualiza su modelo analítico solo si la revisión es mayor. Cada producto mantiene su base y puede funcionar de forma autónoma.
 
-Las demos públicas realizan el mismo intercambio mediante archivos JSON, sin backend ni secretos. No hay sincronización automática entre navegadores o dominios. El backend real y el relay se ejecutan localmente; las interfaces React todavía no incluyen un adaptador conectado a sus APIs.
+Las demos públicas se alojan en Sites; GitHub Pages queda como alternativa configurable. Las demos públicas realizan el mismo intercambio mediante archivos JSON, sin backend ni secretos. No hay sincronización automática entre navegadores o dominios. El backend real y el relay se ejecutan localmente; las interfaces React todavía no incluyen un adaptador conectado a sus APIs.
 
 ## C4 · Contexto
 
@@ -78,3 +78,5 @@ El archivo .sync-checkpoint.json contiene solo cursor y direcciones, está ignor
 Comenzamos con monolitos modulares independientes, contratos explícitos y bases separadas. Antes de producción: conectar UI/API; OIDC/RBAC; autorización multi-tenant; auditoría de actor; TLS/rotación; límites de bytes; backups y restauración; migraciones evolutivas; observabilidad; retención outbox/inbox y pruebas de carga. Microservicios, broker y modelos predictivos requieren justificación posterior.
 
 Licencia MIT. Todos los datos y claves de ejemplo son ficticios.
+
+Consulta [cómo se publicaron las demos](docs/deployment.md), sus límites y cómo actualizar el alojamiento.
