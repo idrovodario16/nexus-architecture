@@ -1,18 +1,21 @@
 # Nexus Architecture
 
+[**Abrir guía web de integración →**](https://idrovodario16.github.io/nexus-architecture/)
+
+
 **Resumen técnico:** documentación de arquitectura, contratos JSON Schema/OpenAPI y relay JavaScript sobre Node.js para integrar NexusCore y NexusInsight por HTTP. Cada producto conserva su API y PostgreSQL independiente; este repositorio no administra una base propia. Incluye diagramas C4, eventos versionados, reintentos, checkpoint y prueba de integración.
 
 Arquitectura y contratos del ecosistema **NexusCore + NexusInsight**, creado por Darío Idrovo como portafolio Full Stack y Datos.
 
 | Proyecto | Responsabilidad | Código | Demo React |
 | --- | --- | --- | --- |
-| NexusCore | Registrar y gestionar operaciones | [Repositorio](https://github.com/idrovodario16/nexuscore-platform) | [Abrir](https://nexuscore-idrovodario16-demo.brownlyric131.chatgpt.site/) |
-| NexusInsight | Ingerir snapshots y calcular indicadores | [Repositorio](https://github.com/idrovodario16/nexusinsight-analytics) | [Abrir](https://nexusinsight-idrovodario16-demo.brownlyric131.chatgpt.site/) |
+| NexusCore | Registrar y gestionar operaciones | [Repositorio](https://github.com/idrovodario16/nexuscore-platform) | [Abrir](https://idrovodario16.github.io/nexuscore-platform/) |
+| NexusInsight | Ingerir snapshots y calcular indicadores | [Repositorio](https://github.com/idrovodario16/nexusinsight-analytics) | [Abrir](https://idrovodario16.github.io/nexusinsight-analytics/) |
 
 ## Cómo funcionan juntos
 Core es dueño de las operaciones. Cada alta/cambio escribe una instantánea versionada en outbox, en la misma transacción que la entidad. El relay lee esa outbox por cursor y entrega eventos a Insight. Insight valida el contrato, registra el event_id en inbox y actualiza su modelo analítico solo si la revisión es mayor. Cada producto mantiene su base y puede funcionar de forma autónoma.
 
-Las demos públicas se alojan en Sites; GitHub Pages queda como alternativa configurable. Las demos públicas realizan el mismo intercambio mediante archivos JSON, sin backend ni secretos. No hay sincronización automática entre navegadores o dominios. El backend real y el relay se ejecutan localmente; las interfaces React todavía no incluyen un adaptador conectado a sus APIs.
+Las demos principales se alojan en GitHub Pages y se actualizan mediante GitHub Actions. Las demos públicas realizan el mismo intercambio mediante archivos JSON, sin backend ni secretos. No hay sincronización automática: las dos demos guardan conjuntos independientes, con claves distintas de localStorage. El backend real y el relay se ejecutan localmente; las interfaces React todavía no incluyen un adaptador conectado a sus APIs.
 
 ## C4 · Contexto
 
@@ -82,3 +85,23 @@ Comenzamos con monolitos modulares independientes, contratos explícitos y bases
 Licencia MIT. Todos los datos y claves de ejemplo son ficticios.
 
 Consulta [cómo se publicaron las demos](docs/deployment.md), sus límites y cómo actualizar el alojamiento.
+
+## Probar la integración entre las demos
+
+1. Abre [NexusCore](https://idrovodario16.github.io/nexuscore-platform/) y crea una operación ficticia con un título fácil de reconocer.
+2. Avanza su estado de **Pendiente → En curso → Completada**. Cada cambio aumenta su revisión.
+3. Pulsa **Exportar eventos** para descargar las instantáneas JSON de todas las operaciones.
+4. Abre [NexusInsight](https://idrovodario16.github.io/nexusinsight-analytics/) y pulsa **Importar eventos** para seleccionar ese archivo.
+5. Busca el título de la operación y revisa los indicadores. Puedes exportar el conjunto filtrado a CSV.
+6. Importa el mismo archivo otra vez: no se duplican las operaciones ni se incrementan los indicadores. Una revisión anterior tampoco sobrescribe una más reciente.
+
+Las demos guardan sus conjuntos por separado en localStorage, con claves distintas. **No se sincronizan automáticamente**, aunque estén bajo el mismo dominio de GitHub Pages. Para reflejar un cambio posterior debes volver a exportar e importar. La vista **Integración** de cada producto explica el recorrido y enlaza al otro.
+
+### Integración entre APIs, fuera de Pages
+
+NexusCore escribe la operación y su evento en la misma transacción de PostgreSQL (**outbox**). El relay de este repositorio consulta `GET /v1/events` y entrega lotes a `POST /v1/events` de NexusInsight. Insight valida el contrato v1, registra el identificador del evento en **inbox** y actualiza la instantánea solo si su revisión es mayor. El relay guarda el checkpoint después de una respuesta exitosa y reintenta fallos temporales; una repetición se procesa sin doble conteo.
+
+Cada API tiene su propia base PostgreSQL. Core puede operar sin Insight, e Insight puede consumir otra fuente compatible. El flujo es de **Core hacia Insight**; Insight no modifica las operaciones de Core. Las interfaces públicas todavía no están conectadas a esas APIs: para probar el flujo HTTP hay que ejecutar los servicios y el relay localmente.
+
+[Guía visual de integración](https://idrovodario16.github.io/nexus-architecture/) · [Contratos y ejecución local](https://github.com/idrovodario16/nexus-architecture#integración-real-paso-a-paso)
+
